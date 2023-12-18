@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chat-mania</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        .hidden {
+            display: none;
+        }
+    </style>
+</head>
+<body class="bg-gray-100 font-sans leading-normal tracking-normal">
+
+    <div class="flex items-center justify-center h-screen">
+        <div id="usernameInputSection" class="bg-white shadow-md rounded px-8 pt-6 pb-8 mb-4">
+            <div class="mb-4">
+                <h1 class="block text-gray-700 text-sm font-bold mb-2">What is your Username?</h1>
+                <input class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" id="username" type="text" placeholder="Username">
+            </div>
+            <div class="flex items-center justify-between">
+                <button class="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline" type="button" onclick="connectToChat()">
+                    CONNECT
+                </button>
+            </div>
+        </div>
+
+        <div id="chatSection" class="hidden bg-white shadow-md rounded px-8 pt-6 pb-8 mb-4 w-full max-w-xl">
+            <div class="mb-4">
+                <h2 class="text-xl mb-2">Chat-mania</h2>
+                <div id="usersConnected" class="mb-4">Users Connected: </div>
+                <div id="chatLog" class="h-64 overflow-y-auto bg-gray-200 p-3 mb-4">
+                    <!-- Chat messages will appear here -->
+                </div>
+                <div class="flex">
+                    <input class="shadow appearance-none border rounded w-full py-2 px-3 mr-4 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" id="messageInput" type="text" placeholder="type here...">
+                    <button class="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline" type="button" onclick="sendMessage()">
+                        send
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="/socket.io/socket.io.js"></script>
+    <script>
+        var socket = io();
+
+        function connectToChat() {
+            const username = document.getElementById('username').value.trim();
+            if (username) {
+                document.getElementById('usernameInputSection').classList.add('hidden');
+                document.getElementById('chatSection').classList.remove('hidden');
+                // Emit a "user connected" event
+                socket.emit('chat message', { username: username, message: 'has connected' });
+            }
+        }
+
+        function sendMessage() {
+            const messageInput = document.getElementById('messageInput');
+            const message = messageInput.value.trim();
+            const username = document.getElementById('username').value.trim();
+            if (message) {
+                // Emit a chat message event
+                socket.emit('chat message', { username: username, message: message });
+                messageInput.value = '';
+            }
+        }
+
+        // Listen for chat message events from the server
+        socket.on('chat message', function(data){
+            const chatLog = document.getElementById('chatLog');
+            chatLog.innerHTML += `<div><strong>${data.username}:</strong> ${data.message}</div>`;
+            chatLog.scrollTop = chatLog.scrollHeight;
+        });
+
+        // Listen for updates to the list of connected users
+        socket.on('update users', function(users){
+            const usersConnected = document.getElementById('usersConnected');
+            usersConnected.textContent = 'Users Connected: ' + users.join(', ');
+        });
+    </script>
+
+</body>
+</html>
